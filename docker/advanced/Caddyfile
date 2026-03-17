@@ -1,0 +1,17 @@
+:8156 {
+    root * /var/www/html
+    php_fastcgi php56:9000
+    file_server
+}
+
+:8174 {
+    root * /var/www/html
+    php_fastcgi php74:9000
+    file_server
+}
+
+:8185 {
+    root * /var/www/html
+    php_fastcgi php85:9000
+    file_server
+}
