@@ -1,6 +1,6 @@
 <?php
 // Exercice 3 : Superglobales
-// URL : http://localhost:8080/exercice-3/greeting.php?nom=Alice&lang=fr
+// URL : http://localhost:8080/exercice-3/greeting.php?nom=Lison&lang=fr
 
 if (isset($_GET['nom'])) {
     $nom = $_GET['nom'];

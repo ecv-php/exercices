@@ -4,12 +4,17 @@
 
 if (isset($_GET['source'])) {
     $file = $_GET['source'];
-    // Sécurité : on n'autorise que les fichiers .php dans les dossiers exercice-*
+    // Sécurité : on n'autorise que certaines extensions dans les dossiers exercice-*
     $real = realpath(__DIR__ . '/' . $file);
+    $allowedExt = ['.php', '.sql', '.json'];
+    $extOk = false;
+    foreach ($allowedExt as $ext) {
+        if (str_ends_with($real ?: '', $ext)) { $extOk = true; break; }
+    }
     if (
         $real !== false
         && str_starts_with($real, __DIR__ . '/exercice-')
-        && str_ends_with($real, '.php')
+        && $extOk
     ) {
         header('Content-Type: text/plain; charset=utf-8');
         readfile($real);
@@ -20,15 +25,28 @@ if (isset($_GET['source'])) {
     exit;
 }
 
-// Récupérer les dossiers d'exercices
+// Récupérer les dossiers d'exercices (scan récursif)
 $exercices = [];
 foreach (glob(__DIR__ . '/exercice-*', GLOB_ONLYDIR) as $dir) {
     $name = basename($dir);
-    $files = glob($dir . '/*.php');
-    sort($files);
-    $exercices[$name] = array_map('basename', $files);
+    $allFiles = [];
+
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS)
+    );
+    foreach ($iterator as $fileInfo) {
+        $ext = $fileInfo->getExtension();
+        if (!in_array($ext, ['php', 'sql', 'json'], true)) continue;
+        $relative = substr($fileInfo->getPathname(), strlen($dir) + 1);
+        // Exclure vendor/ et fichiers cachés
+        if (str_starts_with($relative, 'vendor/') || str_starts_with($relative, '.')) continue;
+        $allFiles[] = $relative;
+    }
+
+    sort($allFiles);
+    $exercices[$name] = $allFiles;
 }
-ksort($exercices);
+uksort($exercices, 'strnatcmp');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -87,12 +105,25 @@ ksort($exercices);
     <div class="exercice">
         <h2><?= htmlspecialchars($folder) ?></h2>
         <ul class="file-list">
+            <?php
+            // Déterminer le point d'entrée pour "Voir le rendu"
+            $hasPublicIndex = in_array('public/index.php', $files, true);
+            if ($hasPublicIndex): ?>
+                <li>
+                    <span class="file-name" style="font-style: italic; color: #2563eb;">public/index.php (point d'entrée)</span>
+                    <span class="links">
+                        <a class="btn-run" href="<?= htmlspecialchars($folder . '/public/index.php') ?>" target="_blank">Voir le rendu</a>
+                    </span>
+                </li>
+            <?php endif; ?>
             <?php foreach ($files as $file): ?>
                 <li>
                     <span class="file-name"><?= htmlspecialchars($file) ?></span>
                     <span class="links">
-                        <a class="btn-run" href="<?= htmlspecialchars($folder . '/' . $file) ?>" target="_blank">Voir le rendu</a>
                         <a class="btn-code" href="#" onclick="showSource('<?= htmlspecialchars($folder . '/' . $file, ENT_QUOTES) ?>'); return false;">Voir le code</a>
+                        <?php if (str_ends_with($file, '.php') && !str_contains($file, '/') && !$hasPublicIndex): ?>
+                            <a class="btn-run" href="<?= htmlspecialchars($folder . '/' . $file) ?>" target="_blank">Voir le rendu</a>
+                        <?php endif; ?>
                     </span>
                 </li>
             <?php endforeach; ?>
@@ -122,12 +153,14 @@ ksort($exercices);
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/php.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/php-template.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
 <script>
 function showSource(file) {
     document.getElementById('modal-title').textContent = file;
     var container = document.getElementById('modal-code');
     container.textContent = 'Chargement...';
-    container.className = 'language-php-template';
+    container.className = file.endsWith('.sql') ? 'language-sql' : file.endsWith('.json') ? 'language-json' : 'language-php-template';
     container.removeAttribute('data-highlighted');
     document.getElementById('overlay').classList.add('active');
 

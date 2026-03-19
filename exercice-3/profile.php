@@ -1,6 +1,6 @@
 <?php
 // Exercice 3 Bonus : Page de profil
-// URL : http://localhost:8080/exercice-3/profile.php?name=Alice&age=25&skills=php,js,python&theme=dark
+// URL : http://localhost:8080/exercice-3/profile.php?name=Lison&age=25&skills=php,js,python&theme=dark
 
 $errors = [];
 
