@@ -1,0 +1,11 @@
+{
+    "name": "ecv/cinema-mvc",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+  "require": {
+    "ext-pdo": "*"
+  }
+}
