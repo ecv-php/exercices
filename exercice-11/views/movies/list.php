@@ -3,9 +3,6 @@
 $title = 'Catalogue SF';
 ob_start();
 ?>
-<pre>
-    <?php print_r(get_defined_vars()); ?>
-</pre>
 <h1>Catalogue SF (<?= count($movies) ?> films)</h1>
 <p><a href="index.php?page=movies&action=create">Ajouter un film</a></p>
 
